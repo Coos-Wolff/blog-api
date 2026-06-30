@@ -26,10 +26,16 @@ def delete_post(post_id):
     return repository.delete_post(post_id)
 
 def register_user(data):
+    required_fields = ("email", "name", "password")
+    missing = [field for field in required_fields if not data.get(field)]
+    if missing:
+        raise ValueError(f"Missing required fields: {missing}")
+
     email = data.get("email")
     user = repository.find_user_by_email(email)
     if user:
         raise EmailAlreadyExistsError("Email already exists")
+
     hashed_password = generate_password_hash(data.get("password"))
     new_user = User(
         email=email,
