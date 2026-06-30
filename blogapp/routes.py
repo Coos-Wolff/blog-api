@@ -31,7 +31,7 @@ def add_post():
     if not data:
         return jsonify(error="Missing JSON body"), 400
 
-    required_fields = ["title", "subtitle", "data", "body", "author", "img_url"]
+    required_fields = ["title", "subtitle", "date", "body", "author", "img_url"]
     missing = [f for f in required_fields if f not in data]
     if missing:
         return jsonify(error=f"Missing required fields: {missing}"), 400

@@ -36,7 +36,7 @@ Content-Type: application/json
 {
   "title": "My New Blog Post",
   "subtitle": "An introduction to blogging",
-  "data": "2026-06-30",
+  "date": "2026-06-30",
   "body": "This is the body of my new blog post.",
   "author": "John Doe",
   "img_url": "https://example.com/image.jpg"
@@ -67,7 +67,7 @@ Content-Type: application/json
 {
   "title": "Post To Be Deleted",
   "subtitle": "This post will be deleted",
-  "data": "2026-06-30",
+  "date": "2026-06-30",
   "body": "This post exists only to be deleted.",
   "author": "Test User",
   "img_url": "https://example.com/delete-me.jpg"
