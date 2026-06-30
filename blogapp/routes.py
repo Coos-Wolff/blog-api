@@ -36,7 +36,7 @@ def add_post():
     blog_post = BlogPost(
         title=data["title"],
         subtitle=data["subtitle"],
-        date=data["data"],
+        date=data["date"],
         body=data["body"],
         author=data["author"],
         img_url=data["img_url"]

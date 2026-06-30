@@ -18,3 +18,12 @@ class BlogPost(db.Model):
 
     def to_dict(self):
         return {column.name: getattr(self, column.name) for column in self.__table__.columns}
+
+class User(db.Model):
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    email: Mapped[str] = mapped_column(String(254), unique=True, nullable=False)
+    name: Mapped[str] = mapped_column(String (20), nullable=False)
+    password: Mapped[str] = mapped_column(Text, nullable=False)
+
+    def to_dict(self):
+        return {column: getattr(self, column) for column in ("id", "email", "name")}
