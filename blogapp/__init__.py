@@ -2,7 +2,7 @@ import os
 
 from flask import Flask
 from dotenv import load_dotenv
-from blogapp.models import db
+from blogapp.models import db, BlogPost, User
 
 load_dotenv()
 
