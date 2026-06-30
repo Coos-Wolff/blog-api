@@ -1,5 +1,5 @@
 from sqlalchemy import select
-from .models import db, BlogPost
+from .models import db, BlogPost, User
 
 def get_all_posts(page, per_page):
     # TODO Order_by should be by date but data is a string not a DateTime object, we should refactor this.
@@ -46,3 +46,6 @@ def delete_post(post_id):
     except Exception as ex:
         db.session.rollback()
         raise ex
+
+def find_user_by_email(email: str):
+    return db.session.execute(select(User).where(User.email == email)).scalar()

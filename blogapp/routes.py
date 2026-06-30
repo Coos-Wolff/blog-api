@@ -1,5 +1,8 @@
+from logging import error
+
 from flask import Blueprint, request, jsonify
 from blogapp import service
+from blogapp.exceptions import EmailAlreadyExistsError
 from blogapp.models import BlogPost
 
 blog_bp = Blueprint("blog", __name__, url_prefix="/post")
@@ -66,5 +69,22 @@ def patch_post():
         return jsonify(error=f"No post found for [{data['id']}]"), 404
     return jsonify(updated_post.to_dict()), 200
 
+@blog_bp.route("/register", methods=["POST"])
+def register():
+    data = request.get_json()
+    if not data:
+        return jsonify(error="Missing JSON body"), 400
+    if not data.get("email"):
+        return jsonify(error="Missing email in body"), 400
+    if not data.get("name"):
+        return jsonify(error="Missing name in body"), 400
+    if not data.get("password"):
+        return jsonify(error="Missing password in body"), 400
+
+    try:
+        registered_user = service.register_user(data)
+        return jsonify(registered_user), 201
+    except EmailAlreadyExistsError as ex:
+        return jsonify(error=str(ex)), 409
 def register_routes(app):
     app.register_blueprint(blog_bp)
