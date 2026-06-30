@@ -1,0 +1,139 @@
+### GET all posts - 200 OK (posts found)
+GET {{host}}/post/
+Accept: application/json
+
+###
+
+### GET all posts with pagination - 200 OK
+GET {{host}}/post/?page=1&per_page=2
+Accept: application/json
+
+###
+
+### GET all posts - 404 Not Found (empty database)
+# Requires the database to be empty to trigger this response
+GET {{host}}/post/
+Accept: application/json
+
+###
+
+### GET single post by ID - 200 OK
+GET {{host}}/post/3
+Accept: application/json
+
+###
+
+### GET single post by ID - 404 Not Found (post does not exist)
+GET {{host}}/post/9999
+Accept: application/json
+
+###
+
+### POST add new post - 201 Created
+POST {{host}}/post/add
+Content-Type: application/json
+
+{
+  "title": "My New Blog Post",
+  "subtitle": "An introduction to blogging",
+  "data": "2026-06-30",
+  "body": "This is the body of my new blog post.",
+  "author": "John Doe",
+  "img_url": "https://example.com/image.jpg"
+}
+
+###
+
+### POST add new post - 400 Bad Request (missing JSON body)
+POST {{host}}/post/add
+Content-Type: application/json
+
+###
+
+### POST add new post - 400 Bad Request (missing required fields)
+POST {{host}}/post/add
+Content-Type: application/json
+
+{
+  "title": "Incomplete Post"
+}
+
+###
+
+### POST create post to delete - 201 Created (captures id for DELETE test below)
+POST {{host}}/post/add
+Content-Type: application/json
+
+{
+  "title": "Post To Be Deleted",
+  "subtitle": "This post will be deleted",
+  "data": "2026-06-30",
+  "body": "This post exists only to be deleted.",
+  "author": "Test User",
+  "img_url": "https://example.com/delete-me.jpg"
+}
+
+> {%
+    client.global.set("delete_post_id", response.body.id);
+%}
+
+###
+
+### DELETE post by ID - 200 OK
+DELETE {{host}}/post/{{delete_post_id}}
+Accept: application/json
+
+###
+
+### DELETE post by ID - 404 Not Found (post does not exist)
+DELETE {{host}}/post/9999
+Accept: application/json
+
+###
+
+### PATCH update post - 200 OK
+PATCH {{host}}/post/update
+Content-Type: application/json
+
+{
+  "id": 3,
+  "title": "Updated Title",
+  "subtitle": "Updated Subtitle"
+}
+
+###
+
+### PATCH update post - 400 Bad Request (missing id in body)
+PATCH {{host}}/post/update
+Content-Type: application/json
+
+{
+  "title": "No ID provided"
+}
+
+###
+
+### PATCH update post - 400 Bad Request (missing JSON body)
+PATCH {{host}}/post/update
+Content-Type: application/json
+
+###
+
+### PATCH update post - 400 Bad Request (no patchable fields provided)
+PATCH {{host}}/post/update
+Content-Type: application/json
+
+{
+  "id": 3
+}
+
+###
+
+### PATCH update post - 404 Not Found (post does not exist)
+PATCH {{host}}/post/update
+Content-Type: application/json
+
+{
+  "id": 9999,
+  "title": "This post does not exist"
+}
