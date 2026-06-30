@@ -137,3 +137,66 @@ Content-Type: application/json
   "id": 9999,
   "title": "This post does not exist"
 }
+
+###
+
+### POST register - 201 Created
+POST {{host}}/post/register
+Content-Type: application/json
+
+{
+  "email": "jane.doe@example.com",
+  "name": "Jane Doe",
+  "password": "securepassword123"
+}
+
+###
+
+### POST register - 409 Conflict (email already exists)
+POST {{host}}/post/register
+Content-Type: application/json
+
+{
+  "email": "jane.doe@example.com",
+  "name": "Jane Doe",
+  "password": "securepassword123"
+}
+
+###
+
+### POST register - 400 Bad Request (missing JSON body)
+POST {{host}}/post/register
+Content-Type: application/json
+
+###
+
+### POST register - 400 Bad Request (missing email)
+POST {{host}}/post/register
+Content-Type: application/json
+
+{
+  "name": "Jane Doe",
+  "password": "securepassword123"
+}
+
+###
+
+### POST register - 400 Bad Request (missing name)
+POST {{host}}/post/register
+Content-Type: application/json
+
+{
+  "email": "jane.doe@example.com",
+  "password": "securepassword123"
+}
+
+###
+
+### POST register - 400 Bad Request (missing password)
+POST {{host}}/post/register
+Content-Type: application/json
+
+{
+  "email": "jane.doe@example.com",
+  "name": "Jane Doe"
+}
