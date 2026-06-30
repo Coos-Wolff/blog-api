@@ -49,3 +49,12 @@ def delete_post(post_id):
 
 def find_user_by_email(email: str):
     return db.session.execute(select(User).where(User.email == email)).scalar()
+
+def add_user(user: User):
+    try:
+        db.session.add(user)
+        db.session.commit()
+        return user
+    except Exception as ex:
+        db.session.rollback()
+        raise ex
