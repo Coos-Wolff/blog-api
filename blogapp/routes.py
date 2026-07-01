@@ -1,8 +1,8 @@
-from logging import error
-
 from flask import Blueprint, request, jsonify
+from flask_jwt_extended import jwt_required, get_jwt_identity
+
 from blogapp import service
-from blogapp.exceptions import EmailAlreadyExistsError
+from blogapp.exceptions import EmailAlreadyExistsError, InvalidCredentialsError, PostTitleAlreadyExistsError
 from blogapp.models import BlogPost
 
 blog_bp = Blueprint("blog", __name__, url_prefix="/post")
@@ -25,14 +25,15 @@ def show_post(post_id):
     return jsonify(post), 200
 
 @blog_bp.route("/add", methods=["POST"])
+@jwt_required()
 def add_post():
+    current_user_id = int(get_jwt_identity())
     data = request.get_json(silent=True)
-
     if not data:
-        return jsonify(error="Missing JSON body"), 400
+        return jsonify(error=create_missing_field_message("body")), 400
 
-    required_fields = ["title", "subtitle", "date", "body", "author", "img_url"]
-    missing = [f for f in required_fields if f not in data]
+    required_fields = ["title", "subtitle", "date", "body", "img_url"]
+    missing = [field for field in required_fields if not data.get(field)]
     if missing:
         return jsonify(error=f"Missing required fields: {missing}"), 400
 
@@ -41,11 +42,14 @@ def add_post():
         subtitle=data["subtitle"],
         date=data["date"],
         body=data["body"],
-        author=data["author"],
-        img_url=data["img_url"]
+        author_id=current_user_id,
+        img_url=data["img_url"],
     )
-    persisted_post = service.add_post(blog_post)
-    return jsonify(persisted_post.to_dict()), 201
+    try:
+        persisted_post = service.add_post(blog_post)
+        return jsonify(persisted_post), 201
+    except PostTitleAlreadyExistsError as error:
+        return jsonify(error=str(error)), 409
 
 @blog_bp.route("/<int:post_id>", methods=["DELETE"])
 def delete_post(post_id):
@@ -58,7 +62,7 @@ def delete_post(post_id):
 def patch_post():
     data = request.get_json(silent=True)
     if not data or "id" not in data:
-        return jsonify(error="Missing JSON body and/or post id."), 400
+        return jsonify(error=create_missing_field_message("body", "id")), 400
 
     fields = {k: data[k] for k in ("title", "subtitle", "body") if k in data and data[k] is not None}
     if not fields:
@@ -73,18 +77,42 @@ def patch_post():
 def register():
     data = request.get_json()
     if not data:
-        return jsonify(error="Missing JSON body"), 400
+        return jsonify(error=create_missing_field_message("body")), 400
     if not data.get("email"):
-        return jsonify(error="Missing email in body"), 400
+        return jsonify(error=create_missing_field_message("email")), 400
     if not data.get("name"):
-        return jsonify(error="Missing name in body"), 400
+        return jsonify(error=create_missing_field_message("name")), 400
     if not data.get("password"):
-        return jsonify(error="Missing password in body"), 400
+        return jsonify(error=create_missing_field_message("password")), 400
 
     try:
         registered_user = service.register_user(data)
         return jsonify(registered_user), 201
-    except EmailAlreadyExistsError as ex:
-        return jsonify(error=str(ex)), 409
+    except ValueError as error:
+        return jsonify(error=str(error)), 400
+    except EmailAlreadyExistsError as error:
+        return jsonify(error=str(error)), 409
+
+@blog_bp.route("/login", methods=["POST"])
+def login():
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify(error=create_missing_field_message("body")), 400
+    if not data.get("email"):
+        return jsonify(error=create_missing_field_message("email")), 400
+    if not data.get("password"):
+        return jsonify(error=create_missing_field_message("password")), 400
+
+    try:
+        access_token = service.login(data)
+        return jsonify(access_token=access_token), 200
+    except ValueError as error:
+        return jsonify(error=str(error)), 400
+    except InvalidCredentialsError:
+        return jsonify(error="Invalid email or password"), 401
+
 def register_routes(app):
     app.register_blueprint(blog_bp)
+
+def create_missing_field_message(*args):
+    return f"Missing {args} in body"
