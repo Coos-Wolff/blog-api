@@ -10,8 +10,7 @@ Accept: application/json
 
 ###
 
-### GET all posts - 404 Not Found (empty database)
-# Requires the database to be empty to trigger this response
+### GET all posts - 404 Not Found (requires the database to be empty to trigger this response)
 GET {{host}}/post/
 Accept: application/json
 
@@ -29,16 +28,63 @@ Accept: application/json
 
 ###
 
-### POST add new post - 201 Created
-POST {{host}}/post/add
+### Auth setup step 1 - register test user (201 Created or 409 if already exists)
+# Run this together with the login below to set up auth for jwt-protected requests
+POST {{host}}/post/register
 Content-Type: application/json
 
 {
-  "title": "My New Blog Post",
+  "email": "auth.test@example.com",
+  "name": "Auth Test User",
+  "password": "testpassword123"
+}
+
+###
+
+### Auth setup step 2 - login test user (200 OK, captures access_token)
+POST {{host}}/post/login
+Content-Type: application/json
+
+{
+  "email": "auth.test@example.com",
+  "password": "testpassword123"
+}
+
+> {%
+    client.global.set("access_token", response.body.access_token);
+%}
+
+###
+
+### POST add new post - 201 Created (authenticated, captures title for duplicate test below)
+POST {{host}}/post/add
+Content-Type: application/json
+Authorization: Bearer {{access_token}}
+
+{
+  "title": "My New Blog Post {{$timestamp}}",
   "subtitle": "An introduction to blogging",
-  "date": "2026-06-30",
+  "date": "2026-07-01",
   "body": "This is the body of my new blog post.",
-  "author": "John Doe",
+  "img_url": "https://example.com/image.jpg"
+}
+
+> {%
+    client.global.set("new_post_title", response.body.title);
+%}
+
+###
+
+### POST add new post - 409 Conflict (title already exists)
+POST {{host}}/post/add
+Content-Type: application/json
+Authorization: Bearer {{access_token}}
+
+{
+  "title": "{{new_post_title}}",
+  "subtitle": "An introduction to blogging",
+  "date": "2026-07-01",
+  "body": "This is the body of my new blog post.",
   "img_url": "https://example.com/image.jpg"
 }
 
@@ -47,12 +93,14 @@ Content-Type: application/json
 ### POST add new post - 400 Bad Request (missing JSON body)
 POST {{host}}/post/add
 Content-Type: application/json
+Authorization: Bearer {{access_token}}
 
 ###
 
 ### POST add new post - 400 Bad Request (missing required fields)
 POST {{host}}/post/add
 Content-Type: application/json
+Authorization: Bearer {{access_token}}
 
 {
   "title": "Incomplete Post"
@@ -60,16 +108,30 @@ Content-Type: application/json
 
 ###
 
-### POST create post to delete - 201 Created (captures id for DELETE test below)
+### POST add new post - 401 Unauthorized (no token)
 POST {{host}}/post/add
 Content-Type: application/json
 
 {
-  "title": "Post To Be Deleted",
+  "title": "My New Blog Post {{$timestamp}}",
+  "subtitle": "An introduction to blogging",
+  "date": "2026-07-01",
+  "body": "This is the body of my new blog post.",
+  "img_url": "https://example.com/image.jpg"
+}
+
+###
+
+### POST create post to delete - 201 Created (captures id for DELETE test below)
+POST {{host}}/post/add
+Content-Type: application/json
+Authorization: Bearer {{access_token}}
+
+{
+  "title": "Post To Be Deleted {{$timestamp}}",
   "subtitle": "This post will be deleted",
   "date": "2026-06-30",
   "body": "This post exists only to be deleted.",
-  "author": "Test User",
   "img_url": "https://example.com/delete-me.jpg"
 }
 
@@ -140,7 +202,7 @@ Content-Type: application/json
 
 ###
 
-### POST register - 201 Created
+### POST register - 201 Created (or 409 if already exists on rerun)
 POST {{host}}/post/register
 Content-Type: application/json
 
@@ -203,34 +265,6 @@ Content-Type: application/json
 
 ###
 
-### Auth setup step 1 - register test user (201 Created or 409 if already exists)
-# Run this together with the login below to set up auth for jwt-protected requests
-POST {{host}}/post/register
-Content-Type: application/json
-
-{
-  "email": "auth.test@example.com",
-  "name": "Auth Test User",
-  "password": "testpassword123"
-}
-
-###
-
-### Auth setup step 2 - login test user (200 OK, captures access_token)
-POST {{host}}/post/login
-Content-Type: application/json
-
-{
-  "email": "auth.test@example.com",
-  "password": "testpassword123"
-}
-
-> {%
-    client.global.set("access_token", response.body.access_token);
-%}
-
-###
-
 ### POST login - 400 Bad Request (missing JSON body)
 POST {{host}}/post/login
 Content-Type: application/json
@@ -264,33 +298,4 @@ Content-Type: application/json
 {
   "email": "jane.doe@example.com",
   "password": "wrongpassword"
-}
-
-###
-
-### POST add new post - 201 Created (authenticated)
-POST {{host}}/post/add
-Content-Type: application/json
-Authorization: Bearer {{access_token}}
-
-{
-  "title": "My New Blog Post",
-  "subtitle": "An introduction to blogging",
-  "date": "2026-07-01",
-  "body": "This is the body of my new blog post.",
-  "img_url": "https://example.com/image.jpg"
-}
-
-###
-
-### POST add new post - 401 Unauthorized (no token)
-POST {{host}}/post/add
-Content-Type: application/json
-
-{
-  "title": "My New Blog Post",
-  "subtitle": "An introduction to blogging",
-  "date": "2026-07-01",
-  "body": "This is the body of my new blog post.",
-  "img_url": "https://example.com/image.jpg"
 }
