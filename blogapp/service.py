@@ -2,7 +2,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_jwt_extended import create_access_token
 
 from blogapp import repository
-from blogapp.exceptions import EmailAlreadyExistsError, InvalidCredentialsError
+from blogapp.exceptions import EmailAlreadyExistsError, InvalidCredentialsError, PostTitleAlreadyExistsError
 from blogapp.models import User
 
 DUMMY_HASH = generate_password_hash("Very.Long.Dummy.Hash.14903!")
@@ -20,6 +20,8 @@ def get_post_by_id(post_id):
     return post.to_dict()
 
 def add_post(blog_post):
+    if repository.find_post_by_title(blog_post.title):
+        raise PostTitleAlreadyExistsError("Post title already exists")
     return repository.add_post(blog_post).to_dict()
 
 def update_post(post_id, fields):

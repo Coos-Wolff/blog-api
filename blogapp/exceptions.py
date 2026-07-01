@@ -6,3 +6,6 @@ class UserNotFoundError(Exception):
 
 class InvalidCredentialsError(Exception):
     pass
+
+class PostTitleAlreadyExistsError(Exception):
+    pass

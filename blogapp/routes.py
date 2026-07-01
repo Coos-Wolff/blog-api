@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
 from blogapp import service
-from blogapp.exceptions import EmailAlreadyExistsError, InvalidCredentialsError
+from blogapp.exceptions import EmailAlreadyExistsError, InvalidCredentialsError, PostTitleAlreadyExistsError
 from blogapp.models import BlogPost
 
 blog_bp = Blueprint("blog", __name__, url_prefix="/post")
@@ -45,8 +45,11 @@ def add_post():
         author_id=current_user_id,
         img_url=data["img_url"],
     )
-    persisted_post = service.add_post(blog_post)
-    return jsonify(persisted_post), 201
+    try:
+        persisted_post = service.add_post(blog_post)
+        return jsonify(persisted_post), 201
+    except PostTitleAlreadyExistsError as error:
+        return jsonify(error=str(error)), 409
 
 @blog_bp.route("/<int:post_id>", methods=["DELETE"])
 def delete_post(post_id):

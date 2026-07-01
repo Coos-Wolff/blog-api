@@ -13,6 +13,9 @@ def get_all_posts(page, per_page):
 def get_post_by_id(post_id):
     return db.session.execute(select(BlogPost).where(BlogPost.id == post_id)).scalar()
 
+def find_post_by_title(title: str):
+    return db.session.execute(select(BlogPost).where(BlogPost.title == title)).scalar()
+
 def add_post(blog_post):
     try:
         db.session.add(blog_post)
