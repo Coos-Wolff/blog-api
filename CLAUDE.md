@@ -30,6 +30,7 @@ Layered: **controller (routes) → service → repository**. Keep the layers str
 
 ## Git workflow
 `main` is protected and requires a PR. Work on a branch → commit → push → PR → merge. `.gitattributes` enforces LF normalization.
+- **Branch protection**: GitHub branch protection on `main` requires a pull request before merging (0 approvals needed — solo repo) and `enforce_admins` is on, so even the repo owner cannot `git push` directly to `main`; a direct push is rejected and must go through a branch + PR instead.
 
 ## Known tech debt
 - `BlogPost.date` is a `String`, not a `Date` — loses DB-level sort/range correctness; refactor target.
