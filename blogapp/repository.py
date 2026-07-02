@@ -27,8 +27,6 @@ def add_post(blog_post):
 
 def patch_post(post_id, fields):
     post = get_post_by_id(post_id)
-    if post is None:
-        return None
     try:
         for key, value in fields.items():
             setattr(post, key, value)

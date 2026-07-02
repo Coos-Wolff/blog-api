@@ -25,8 +25,14 @@ def add_post(blog_post):
         raise PostTitleAlreadyExistsError("Post title already exists")
     return repository.add_post(blog_post).to_dict()
 
-def update_post(post_id, fields):
-    return repository.patch_post(post_id, fields)
+def update_post(post_id, current_user_id, fields):
+    require_ownership(post_id, current_user_id)
+    new_title = fields.get("title")
+    if new_title:
+        existing = repository.find_post_by_title(new_title)
+        if existing and existing.id != post_id:
+            raise PostTitleAlreadyExistsError("Post title already exists")
+    return repository.patch_post(post_id, fields).to_dict()
 
 def delete_post(post_id: int, current_user_id: int):
     require_ownership(post_id, current_user_id)

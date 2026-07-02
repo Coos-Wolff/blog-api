@@ -122,7 +122,34 @@ Content-Type: application/json
 
 ###
 
-### POST create post to delete - 201 Created (captures id for DELETE test below)
+### Auth setup step 3 - register/login a second "other" user (not author, not admin)
+# Needed to exercise the 403 Forbidden branch of the ownership check below
+POST {{host}}/post/register
+Content-Type: application/json
+
+{
+  "email": "other.user@example.com",
+  "name": "Other User",
+  "password": "otherpassword123"
+}
+
+###
+
+POST {{host}}/post/login
+Content-Type: application/json
+
+{
+  "email": "other.user@example.com",
+  "password": "otherpassword123"
+}
+
+> {%
+    client.global.set("other_access_token", response.body.access_token);
+%}
+
+###
+
+### POST create post to delete - 201 Created (owned by auth.test user, captures id for DELETE tests below)
 POST {{host}}/post/add
 Content-Type: application/json
 Authorization: Bearer {{access_token}}
@@ -141,63 +168,111 @@ Authorization: Bearer {{access_token}}
 
 ###
 
-### DELETE post by ID - 200 OK
+### DELETE post by ID - 401 Unauthorized (no token)
 DELETE {{host}}/post/{{delete_post_id}}
 Accept: application/json
+
+###
+
+### DELETE post by ID - 403 Forbidden (valid token, but not the author and not admin)
+DELETE {{host}}/post/{{delete_post_id}}
+Accept: application/json
+Authorization: Bearer {{other_access_token}}
 
 ###
 
 ### DELETE post by ID - 404 Not Found (post does not exist)
 DELETE {{host}}/post/9999
 Accept: application/json
+Authorization: Bearer {{access_token}}
 
 ###
 
-### PATCH update post - 200 OK
-PATCH {{host}}/post/update
+### DELETE post by ID - 200 OK (valid token, is the author)
+DELETE {{host}}/post/{{delete_post_id}}
+Accept: application/json
+Authorization: Bearer {{access_token}}
+
+###
+
+### POST create post to patch - 201 Created (owned by auth.test user, captures id for PATCH tests below)
+POST {{host}}/post/add
+Content-Type: application/json
+Authorization: Bearer {{access_token}}
+
+{
+  "title": "Post To Be Patched {{$timestamp}}",
+  "subtitle": "This post will be patched",
+  "date": "2026-06-30",
+  "body": "This post exists only to be patched.",
+  "img_url": "https://example.com/patch-me.jpg"
+}
+
+> {%
+    client.global.set("patch_post_id", response.body.id);
+%}
+
+###
+
+### PATCH update post - 401 Unauthorized (no token)
+PATCH {{host}}/post/{{patch_post_id}}
 Content-Type: application/json
 
 {
-  "id": 3,
   "title": "Updated Title",
   "subtitle": "Updated Subtitle"
 }
 
 ###
 
-### PATCH update post - 400 Bad Request (missing id in body)
-PATCH {{host}}/post/update
-Content-Type: application/json
-
-{
-  "title": "No ID provided"
-}
-
-###
-
 ### PATCH update post - 400 Bad Request (missing JSON body)
-PATCH {{host}}/post/update
+PATCH {{host}}/post/{{patch_post_id}}
 Content-Type: application/json
+Authorization: Bearer {{access_token}}
 
 ###
 
 ### PATCH update post - 400 Bad Request (no patchable fields provided)
-PATCH {{host}}/post/update
+PATCH {{host}}/post/{{patch_post_id}}
 Content-Type: application/json
+Authorization: Bearer {{access_token}}
 
 {
-  "id": 3
+  "img_url": "https://example.com/not-patchable.jpg"
 }
 
 ###
 
-### PATCH update post - 404 Not Found (post does not exist)
-PATCH {{host}}/post/update
+### PATCH update post - 404 Not Found (valid token, post does not exist)
+PATCH {{host}}/post/9999
 Content-Type: application/json
+Authorization: Bearer {{access_token}}
 
 {
-  "id": 9999,
   "title": "This post does not exist"
+}
+
+###
+
+### PATCH update post - 403 Forbidden (valid token, but not the author and not admin)
+PATCH {{host}}/post/{{patch_post_id}}
+Content-Type: application/json
+Authorization: Bearer {{other_access_token}}
+
+{
+  "title": "Should not be allowed"
+}
+
+###
+
+### PATCH update post - 200 OK (valid token, is the author)
+PATCH {{host}}/post/{{patch_post_id}}
+Content-Type: application/json
+Authorization: Bearer {{access_token}}
+
+{
+  "title": "Updated Title",
+  "subtitle": "Updated Subtitle"
 }
 
 ###
