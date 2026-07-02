@@ -1,4 +1,4 @@
-from sqlalchemy import Integer, String, Text, ForeignKey
+from sqlalchemy import Integer, String, Text, ForeignKey, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from blogapp.extensions import db
 
@@ -32,6 +32,7 @@ class User(db.Model):
     name: Mapped[str] = mapped_column(String (20), nullable=False)
     password: Mapped[str] = mapped_column(Text, nullable=False)
     posts: Mapped[list["BlogPost"]] = relationship(back_populates="author")
+    is_admin: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     def to_dict(self):
         return {column: getattr(self, column) for column in ("id", "email", "name")}

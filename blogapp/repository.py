@@ -40,18 +40,18 @@ def patch_post(post_id, fields):
 
 def delete_post(post_id):
     post = get_post_by_id(post_id)
-    if post is None:
-        return False
     try:
         db.session.delete(post)
         db.session.commit()
-        return True
     except Exception as ex:
         db.session.rollback()
         raise ex
 
 def find_user_by_email(email: str):
     return db.session.execute(select(User).where(User.email == email)).scalar()
+
+def find_user_by_id(user_id: int):
+    return db.session.get(User, user_id)
 
 def add_user(user: User):
     try:

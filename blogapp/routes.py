@@ -1,8 +1,11 @@
+from logging import error
+
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
 from blogapp import service
-from blogapp.exceptions import EmailAlreadyExistsError, InvalidCredentialsError, PostTitleAlreadyExistsError
+from blogapp.exceptions import EmailAlreadyExistsError, InvalidCredentialsError, PostTitleAlreadyExistsError, \
+    NotFoundError, ForbiddenError, UnauthorizedError
 from blogapp.models import BlogPost
 
 blog_bp = Blueprint("blog", __name__, url_prefix="/post")
@@ -52,11 +55,18 @@ def add_post():
         return jsonify(error=str(error)), 409
 
 @blog_bp.route("/<int:post_id>", methods=["DELETE"])
+@jwt_required()
 def delete_post(post_id):
-    is_deleted = service.delete_post(post_id)
-    if is_deleted:
+    current_user_id = int(get_jwt_identity())
+    try:
+        service.delete_post(post_id, current_user_id)
         return jsonify(message=f"post with [{post_id}] is deleted"), 200
-    return jsonify(error=f"Could not find post with id: [{post_id}]"), 404
+    except NotFoundError as error:
+        return jsonify(error=str(error)), 404
+    except ForbiddenError as error:
+        return jsonify(error=str(error)), 403
+    except UnauthorizedError as error:
+        return jsonify(error=str(error)), 401
 
 @blog_bp.route("/update", methods=["PATCH"])
 def patch_post():
