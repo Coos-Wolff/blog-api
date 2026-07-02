@@ -1,5 +1,3 @@
-from logging import error
-
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
@@ -68,20 +66,29 @@ def delete_post(post_id):
     except UnauthorizedError as error:
         return jsonify(error=str(error)), 401
 
-@blog_bp.route("/update", methods=["PATCH"])
-def patch_post():
+@blog_bp.route("/<int:post_id>", methods=["PATCH"])
+@jwt_required()
+def patch_post(post_id):
+    current_user_id = int(get_jwt_identity())
     data = request.get_json(silent=True)
-    if not data or "id" not in data:
-        return jsonify(error=create_missing_field_message("body", "id")), 400
+    if not data:
+        return jsonify(error=create_missing_field_message("body")), 400
 
     fields = {k: data[k] for k in ("title", "subtitle", "body") if k in data and data[k] is not None}
     if not fields:
         return jsonify(error="No patchable fields provided"), 400
 
-    updated_post = service.update_post(data["id"], fields)
-    if not updated_post:
-        return jsonify(error=f"No post found for [{data['id']}]"), 404
-    return jsonify(updated_post.to_dict()), 200
+    try:
+        updated_post = service.update_post(post_id, current_user_id, fields)
+        return jsonify(updated_post), 200
+    except NotFoundError as error:
+        return jsonify(error=str(error)), 404
+    except ForbiddenError as error:
+        return jsonify(error=str(error)), 403
+    except UnauthorizedError as error:
+        return jsonify(error=str(error)), 401
+    except PostTitleAlreadyExistsError as error:
+        return jsonify(error=str(error)), 409
 
 @blog_bp.route("/register", methods=["POST"])
 def register():
@@ -124,5 +131,5 @@ def login():
 def register_routes(app):
     app.register_blueprint(blog_bp)
 
-def create_missing_field_message(*args):
-    return f"Missing {args} in body"
+def create_missing_field_message(field):
+    return f"Missing {field} in body"
