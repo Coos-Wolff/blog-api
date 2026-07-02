@@ -299,3 +299,16 @@ Content-Type: application/json
   "email": "jane.doe@example.com",
   "password": "wrongpassword"
 }
+
+### Malformed token - 401 (Authentication required)
+POST http://localhost:5003/post/add
+Content-Type: application/json
+Authorization: Bearer garbage.token.here
+
+{
+  "title": "Should not be created",
+  "subtitle": "Testing malformed token",
+  "date": "2026-07-05",
+  "body": "This request should be rejected before it reaches the handler.",
+  "img_url": "https://example.com/img.png"
+}

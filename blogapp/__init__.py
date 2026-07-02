@@ -16,6 +16,8 @@ def create_app():
     jwt.init_app(app)
     db.init_app(app)
 
+    from blogapp import auth_handlers
+
     with app.app_context():
         db.create_all()
 
