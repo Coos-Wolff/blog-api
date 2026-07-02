@@ -2,7 +2,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_jwt_extended import create_access_token
 
 from blogapp import repository
-from blogapp.exceptions import EmailAlreadyExistsError, InvalidCredentialsError, PostTitleAlreadyExistsError
+from blogapp.exceptions import EmailAlreadyExistsError, InvalidCredentialsError, PostTitleAlreadyExistsError, \
+    UnauthorizedError, NotFoundError, ForbiddenError
 from blogapp.models import User
 
 DUMMY_HASH = generate_password_hash("Very.Long.Dummy.Hash.14903!")
@@ -27,7 +28,8 @@ def add_post(blog_post):
 def update_post(post_id, fields):
     return repository.patch_post(post_id, fields)
 
-def delete_post(post_id):
+def delete_post(post_id: int, current_user_id: int):
+    require_ownership(post_id, current_user_id)
     return repository.delete_post(post_id)
 
 def register_user(data):
@@ -63,6 +65,19 @@ def login(data):
         raise InvalidCredentialsError("Invalid login attempt")
     return create_access_token(str(user.id))
 
+def require_ownership(post_id: int, current_user_id: int):
+    user = repository.find_user_by_id(current_user_id)
+    if user is None:
+        raise UnauthorizedError("No user found")
+
+    post = repository.get_post_by_id(post_id)
+    if post is None:
+        raise NotFoundError(f"No post found for [{post_id}]")
+
+    is_author = post.author_id == current_user_id
+    is_admin = user.is_admin
+    if not is_author and not is_admin:
+        raise ForbiddenError("Not allowed to make modifications")
 
 def check_for_missing_fields(data, *args):
     required_fields = args
